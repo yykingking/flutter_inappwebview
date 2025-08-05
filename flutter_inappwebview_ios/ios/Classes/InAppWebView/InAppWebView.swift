@@ -590,12 +590,12 @@ public class InAppWebView: WKWebView, UIScrollViewDelegate, WKUIDelegate,
     }
     
     public func prepareAndAddUserScripts() -> Void {
-        if windowId != nil {
-            // The new created window webview has the same WKWebViewConfiguration variable reference.
-            // So, we cannot set another WKWebViewConfiguration for it unfortunately!
-            // This is a limitation of the official WebKit API.
-            return
-        }
+        // if windowId != nil {
+        //     // The new created window webview has the same WKWebViewConfiguration variable reference.
+        //     // So, we cannot set another WKWebViewConfiguration for it unfortunately!
+        //     // This is a limitation of the official WebKit API.
+        //     return
+        // }
         configuration.userContentController.initialize()
         
         if let applePayAPIEnabled = settings?.applePayAPIEnabled, applePayAPIEnabled {
@@ -832,9 +832,11 @@ public class InAppWebView: WKWebView, UIScrollViewDelegate, WKUIDelegate,
     public func initializeWindowIdJS() {
         if let windowId = windowId {
             if #available(iOS 14.0, *) {
-                let contentWorlds = configuration.userContentController.getContentWorlds(with: windowId)
+                // Create a strong reference to contentWorlds to prevent deallocation during execution
+                let contentWorlds = Array(configuration.userContentController.getContentWorlds(with: windowId))
                 for contentWorld in contentWorlds {
                     let source = WindowIdJS.WINDOW_ID_INITIALIZE_JS_SOURCE().replacingOccurrences(of: PluginScriptsUtil.VAR_PLACEHOLDER_VALUE, with: String(windowId))
+                    guard contentWorld.name != nil else { continue }
                     evaluateJavascript(source: source, contentWorld: contentWorld)
                 }
             } else {
@@ -1555,6 +1557,10 @@ public class InAppWebView: WKWebView, UIScrollViewDelegate, WKUIDelegate,
     @available(iOS 14.0, *)
     public func evaluateJavaScript(_ javaScript: String, frame: WKFrameInfo? = nil, contentWorld: WKContentWorld, completionHandler: ((Result<Any, Error>) -> Void)? = nil) {
         if let applePayAPIEnabled = settings?.applePayAPIEnabled, applePayAPIEnabled {
+            return
+        }
+        guard contentWorld.name != nil else {
+            completionHandler?(.failure(NSError(domain: "InAppWebView", code: -3, userInfo: [NSLocalizedDescriptionKey: "ContentWorld is invalid or deallocated"])))
             return
         }
         super.evaluateJavaScript(javaScript, in: frame, in: contentWorld, completionHandler: completionHandler)
