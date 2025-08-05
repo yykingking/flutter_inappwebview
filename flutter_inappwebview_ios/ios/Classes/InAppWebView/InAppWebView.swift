@@ -2642,7 +2642,7 @@ public class InAppWebView: WKWebView, UIScrollViewDelegate, WKUIDelegate,
             inAppWebViewManager.windowAutoincrementId += 1
             windowId = inAppWebViewManager.windowAutoincrementId
         }
-        
+        configuration.userContentController = WKUserContentController()
         let windowWebView = InAppWebView(id: nil, plugin: nil, frame: self.bounds, configuration: configuration, contextMenu: nil)
         windowWebView.windowId = windowId
 
@@ -2904,11 +2904,11 @@ public class InAppWebView: WKWebView, UIScrollViewDelegate, WKUIDelegate,
         guard javaScriptBridgeEnabled else {
             return
         }
-        
+
         guard let body = message.body as? [String: Any?] else {
             return
         }
-        
+
         guard let bridgeSecret = body["_bridgeSecret"] as? String, bridgeSecret == exceptedBridgeSecret else {
             print("Bridge access attempt with wrong secret token, possibly from malicious code from origin \(message.frameInfo.securityOrigin)")
             return
